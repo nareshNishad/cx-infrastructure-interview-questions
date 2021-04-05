@@ -1,11 +1,10 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: ECS CX Interview Questions Scenario 2 Template 2
+Description: ECS CX assignment Scenario 2 Template 2
 
 Transform: AWS::Serverless-2016-10-31
 
 Metadata:
-
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
@@ -32,6 +31,8 @@ Parameters:
       can include numbers, lowercase letters, uppercase letters, and hyphens (-).
       It cannot start or end with a hyphen (-).
     Type: String
+    Default: assignment-scenario
+
   pArtifactS3Key:
     AllowedPattern: ^[0-9a-zA-Z-\/\.]*$
     ConstraintDescription: key can include numbers, lowercase letters,
@@ -56,7 +57,6 @@ Parameters:
       - DEBUG
 
 Resources:
-
   rGetCustomerInformationAppFunctionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -71,7 +71,25 @@ Resources:
               - sts:AssumeRole
       Path: /
       Policies:
-      # Add policy to read dynamodb
+      - PolicyName: cwl-access
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Effect: Allow
+            Resource: '*'
+      - PolicyName: dynamodb-getitem-access
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:GetItem
+            Resource:
+              - !GetAtt rCustomerInformationDynamoDb.Arn
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
@@ -80,8 +98,17 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri:
-        Bucket: # Bucket Name from parameters
-        Key: # Key from parameters
+        Bucket: !Ref pArtifactS3BucketName
+        Key: !Ref pArtifactS3Key
+      Environment:
+        Variables:
+          LOG_LEVEL: !Ref pLogLevel
+          TABLE_NAME: !Ref rCustomerInformationDynamoDb
+          TABLE_REGION: !Ref AWS::Region
+      Runtime: python3.7
+      Handler: get_item.lambda_handler
+      Timeout: 10
+      Role: !GetAtt rGetCustomerInformationAppFunctionRole.Arn
 
   # Complete DynamoDb resource for string attribute "PhoneNumber"
   rCustomerInformationDynamoDb:
@@ -89,17 +116,28 @@ Resources:
     DeletionPolicy: Delete
     Properties:
       BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: "City"
+          AttributeType: "S"
+        - AttributeName: "Country"
+          AttributeType: "S"
+        
+      KeySchema:
+        - AttributeName: "Country"
+          KeyType: "HASH"
+        - AttributeName: "City"
+          KeyType: "RANGE"
+        
 
 Outputs:
-
   GetCustomerInformationAppFunctionRole:
     Description: IAM function role Arn for the Get Customer Information App Function
-    Value: # Complete me
+    Value: !GetAtt rGetCustomerInformationAppFunctionRole.Arn
 
   GetCustomerInformationLambdaFunction:
     Description: Arn of Get Customer information Lambda Function
-    Value: # Complete me
+    Value: !GetAtt rGetCustomerInformationAppFunction.Arn
 
   CustomerInformationDynamoDb:
     Description: Customer Information Dynamo DB Table name
-    Value: # Complete me
+    Value: !Ref rCustomerInformationDynamoDb

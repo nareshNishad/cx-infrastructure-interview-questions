@@ -1,0 +1,34 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Deploys an S3 Bucket to be used for storing lambda deployment packages.
+
+Parameters:
+
+  pSourceCodeBucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-.]*[0-9a-zA-Z])*$
+    ConstraintDescription: bucket name can include numbers, lowercase
+      letters, uppercase letters, periods (.), and hyphens (-). It cannot start or
+      end with a hyphen (-).
+    Type: String
+    Description: S3 Bucket Name for the project Source Code Bucket created by this stack. 
+
+Resources:
+
+  rSourceCodeBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Ref pSourceCodeBucketName
+      VersioningConfiguration:
+        Status: Enabled
+
+Outputs:
+
+  SourceCodeBucketName:
+    Description: Source Code S3 Bucket Name
+    Value: !Ref rSourceCodeBucket
+
+  SourceCodeBucketUrl:
+    Description: Source Code S3 Bucket URL
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/s3/home?region=${AWS::Region}&bucket=${rSourceCodeBucket}'
