@@ -117,17 +117,12 @@ Resources:
     Properties:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        - AttributeName: "City"
-          AttributeType: "S"
-        - AttributeName: "Country"
+        - AttributeName: "PhoneNumber"
           AttributeType: "S"
         
       KeySchema:
-        - AttributeName: "Country"
+        - AttributeName: "PhoneNumber"
           KeyType: "HASH"
-        - AttributeName: "City"
-          KeyType: "RANGE"
-        
 
 Outputs:
   GetCustomerInformationAppFunctionRole:
